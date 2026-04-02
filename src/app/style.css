@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
     --bg-galactic: radial-gradient(circle at 30% -10%, #1e1b4b 0%, #0f172a 55%, #0a0a1a 100%);
@@ -9,24 +8,27 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 body {
     background: #0f172a;
     background-image: var(--bg-galactic);
     background-attachment: fixed;
     color: #e2e8f0;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: sans-serif;
     min-height: 100vh;
+    margin: 0;
 }
 
 .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
+}
+
+.btn-purple {
+    background: linear-gradient(135deg, #a855f7, #c084fc);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
 }
