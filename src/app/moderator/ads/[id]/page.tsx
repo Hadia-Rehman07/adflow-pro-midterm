@@ -4,104 +4,156 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { moderateAd } from './actions'
 
-export default async function ModeratorReviewPage(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params;
+export default async function ModeratorReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   const { authorized, redirect: redirectPath } = await requireRole(['moderator', 'admin', 'super_admin'])
-  
   if (!authorized) redirect(redirectPath!)
-  
+
   const supabase = await createClient()
+
   const { data: ad, error } = await supabase
     .from('ads')
     .select('*, users(email), ad_media(*)')
     .eq('id', id)
     .single()
-    
+
   if (error || !ad) {
-    return <div className="p-12 text-center text-red-500 font-bold">Ad not found.</div>
+    return (
+      <div className="p-12 text-center bg-slate-950 min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-red-500">Ad Not Found</h1>
+        <Link href="/moderator/ads" className="text-blue-400 hover:underline mt-4 inline-block font-medium">
+          &larr; Go back to queue
+        </Link>
+      </div>
+    )
   }
 
   return (
-    <div className="w-full max-w-5xl mt-12 mb-24 p-6 flex flex-col gap-6">
-      <Link href="/moderator" className="text-blue-600 hover:underline mb-2">&larr; Back to Queue</Link>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-start bg-white p-8 border border-gray-200 rounded-lg shadow-sm gap-8">
-        <div className="flex-1 overflow-hidden">
-          <h1 className="text-3xl font-bold text-gray-900 break-words">{ad.title}</h1>
-          <p className="text-sm text-gray-500 mt-2">Submitted by: {ad.users?.email}</p>
-          <div className="mt-6">
-            <h3 className="font-semibold mb-2 border-b pb-2">Description</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{ad.description}</p>
+    <div className="w-full max-w-6xl mt-12 mb-24 p-6 flex flex-col gap-6 mx-auto">
+      <div className="flex items-center justify-between">
+        <Link href="/moderator/ads" className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition">
+          &larr; Back to Moderation Queue
+        </Link>
+        <span className="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-400 border border-slate-700">ID: {id}</span>
+      </div>
+
+      <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
+
+        {/* LEFT COLUMN: AD DETAILS */}
+        <div className="flex-1 w-full bg-white p-8 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="border-b pb-4 mb-6">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{ad.title}</h1>
+            <p className="text-sm text-gray-500 mt-3 flex items-center gap-2 italic">
+              <span className="font-bold text-slate-700 not-italic uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded">Owner:</span> {ad.users?.email}
+            </p>
           </div>
-          
-          {ad.ad_media && ad.ad_media.length > 0 && (
-            <div className="mt-6 border-t pt-4">
-              <h3 className="font-semibold mb-4 text-gray-800">Media Attachments</h3>
-              <div className="flex gap-4 flex-wrap">
+
+          <div className="mb-10">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Description</h3>
+            <div className="text-gray-700 text-lg whitespace-pre-wrap leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-inner">
+              {ad.description}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-5">Media Attachments</h3>
+            {ad.ad_media && ad.ad_media.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ad.ad_media.map((media: any) => (
-                  <div key={media.id} className="border p-2 rounded w-48 bg-gray-50 text-center flex flex-col items-center">
+                  <div key={media.id} className="group relative border p-1 rounded-xl bg-white hover:shadow-lg transition-all duration-300">
                     {media.thumbnail_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={media.thumbnail_url} alt="thumbnail" className="h-32 object-cover rounded shadow-sm w-full" />
+                      <img
+                        src={media.thumbnail_url}
+                        alt="Ad content"
+                        className="h-40 w-full object-cover rounded-lg"
+                      />
                     ) : (
-                      <div className="h-32 w-full bg-gray-200 rounded flex items-center justify-center text-gray-400">No Image</div>
+                      <div className="h-40 w-full bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">No Image</div>
                     )}
-                    <a href={media.original_url} target="_blank" className="text-xs text-blue-600 hover:underline mt-2 truncate w-full" title={media.original_url}>
+                    <a
+                      href={media.original_url}
+                      target="_blank"
+                      className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg text-white text-[10px] font-black uppercase tracking-widest"
+                    >
                       View Original
                     </a>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="p-8 border-2 border-dashed border-slate-100 rounded-xl text-center text-slate-400 text-sm italic">
+                No media uploaded for this listing.
+              </div>
+            )}
+          </div>
         </div>
-        
-        <div className="w-full md:w-80 bg-gray-50 border border-gray-200 p-6 rounded-md shadow-sm shrink-0">
-          <h3 className="font-bold text-gray-800 border-b pb-2 mb-4">Moderator Decision</h3>
-          
-          <form action={moderateAd} className="flex flex-col gap-4">
-            <input type="hidden" name="id" value={ad.id} />
-            <div className="flex flex-col gap-2">
-              <label htmlFor="note" className="text-sm font-medium text-gray-700">Internal Note / Rejection Reason</label>
-              <textarea 
-                id="note" 
-                name="note" 
-                rows={4} 
-                className="border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-600 outline-none resize-y"
-                placeholder="Optional if approving. Required if rejecting."
-              />
-            </div>
-            
-            <div className="flex flex-col gap-3 mt-2">
-              <button 
-                type="submit" 
-                name="action" 
-                value="approve" 
-                className="w-full bg-green-600 text-white font-medium py-2 px-4 rounded hover:bg-green-700 shadow-sm transition inline-flex justify-center items-center"
-              >
-                Approve (Move to Payment)
-              </button>
-              
-              <button 
-                type="submit" 
-                name="action" 
-                value="reject" 
-                className="w-full bg-red-600 text-white font-medium py-2 px-4 rounded hover:bg-red-700 shadow-sm transition inline-flex justify-center items-center"
-              >
-                Reject (Return to Draft)
-              </button>
 
-              <button 
-                type="submit" 
-                name="action" 
-                value="flag" 
-                className="w-full bg-slate-800 text-white font-medium py-2 px-4 rounded hover:bg-slate-900 shadow-sm transition inline-flex justify-center items-center mt-2 border border-slate-700"
-              >
-                Flag for Suspicious Content
-              </button>
-            </div>
-          </form>
+        {/* RIGHT COLUMN: DECISION PANEL */}
+        <div className="w-full lg:w-96 shrink-0 lg:sticky lg:top-8">
+          <div className="bg-slate-950 p-7 rounded-2xl shadow-2xl text-white border border-slate-800">
+            <h3 className="font-bold border-b border-slate-800 pb-4 mb-6 flex items-center gap-2 text-sm tracking-widest uppercase">
+              <span className="h-2 w-2 bg-yellow-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(250,204,21,0.5)]"></span>
+              Moderator Action
+            </h3>
+
+            <form action={moderateAd} className="flex flex-col gap-6">
+              {/* HIDDEN FIELDS - Critical for Action logic */}
+              <input type="hidden" name="ad_id" value={ad.id} />
+              <input type="hidden" name="userId" value={ad.user_id} />
+              <input type="hidden" name="title" value={ad.title} />
+
+              <div className="flex flex-col gap-2.5">
+                <label htmlFor="feedback" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] ml-1">
+                  Feedback for User (Optional)
+                </label>
+                <textarea
+                  id="feedback"
+                  name="feedback" // Updated from 'note' to 'feedback'
+                  rows={4}
+                  className="w-full border border-slate-800 rounded-xl p-4 text-sm bg-slate-900 text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none resize-none transition-all"
+                  placeholder="Explain your decision..."
+                />
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <button
+                  type="submit"
+                  name="action"
+                  value="approve"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-emerald-950/40 active:scale-[0.98] uppercase text-[10px] tracking-[0.2em]"
+                >
+                  Approve & Publish
+                </button>
+
+                <button
+                  type="submit"
+                  name="action"
+                  value="reject"
+                  className="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-rose-950/40 active:scale-[0.98] uppercase text-[10px] tracking-[0.2em]"
+                >
+                  Reject to Draft
+                </button>
+
+                <div className="border-t border-slate-800 mt-2 pt-6">
+                  <button
+                    type="submit"
+                    name="action"
+                    value="flag"
+                    className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-4 rounded-xl transition-all shadow-lg shadow-amber-950/20 active:scale-[0.98] uppercase text-[10px] tracking-[0.2em]"
+                  >
+                    Flag Suspicious
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <p className="mt-5 text-[9px] text-slate-500 text-center uppercase tracking-widest font-medium">
+            Authorized Personnel Only • Audit Log Active
+          </p>
         </div>
+
       </div>
     </div>
   )

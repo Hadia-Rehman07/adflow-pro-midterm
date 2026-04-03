@@ -85,17 +85,14 @@ export default async function PackagesPage(props: { searchParams?: Promise<{ ad_
               </div>
             )}
             <div className="p-8 flex flex-col flex-1">
-              {/* Name */}
               <h2 className="text-xl font-extrabold text-white uppercase tracking-wide mb-1">{plan.name}</h2>
               <p className="text-xs text-slate-500 mb-6">{plan.duration}</p>
 
-              {/* Price */}
               <div className="mb-8">
                 <span className="text-6xl font-extrabold text-white">{plan.price}</span>
                 <span className="text-slate-500 ml-1 text-sm">/ listing</span>
               </div>
 
-              {/* Features */}
               <ul className="space-y-3 mb-8 flex-1">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-3 text-sm text-slate-300">
@@ -105,18 +102,27 @@ export default async function PackagesPage(props: { searchParams?: Promise<{ ad_
                 ))}
               </ul>
 
-              {/* CTA */}
               <form action={selectPackageAction}>
                 <input type="hidden" name="ad_id" value={adId || ''} />
                 <input type="hidden" name="package_id" value={plan.id} />
                 <input type="hidden" name="package_name" value={plan.name} />
                 <input type="hidden" name="amount" value={plan.amount} />
+
                 <button
-                  disabled={!adId}
-                  className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed ${plan.highlight ? 'btn-purple' : ''}`}
-                  style={!plan.highlight ? { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'white' } : {}}
+                  type="submit"
+                  className="w-full py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
+                  style={plan.highlight ? {
+                    background: 'linear-gradient(90deg, #7c3aed, #c084fc)',
+                    color: 'white',
+                    cursor: 'pointer'
+                  } : {
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
                 >
-                  {adId ? `Purchase ${plan.name}` : 'Select an Ad First'}
+                  Purchase {plan.name}
                 </button>
               </form>
             </div>
@@ -126,4 +132,3 @@ export default async function PackagesPage(props: { searchParams?: Promise<{ ad_
     </div>
   )
 }
-

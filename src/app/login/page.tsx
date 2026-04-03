@@ -5,56 +5,86 @@ export default async function LoginPage(props: { searchParams: Promise<{ error?:
   const params = await props.searchParams;
 
   return (
-    <div className="w-full flex justify-center mt-24">
-      <div className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-6 text-center">Sign in to AdFlow Pro</h2>
-        
-        {params?.error && (
-          <div className="bg-red-50 text-red-600 border border-red-200 p-3 rounded-md mb-4 text-sm font-medium">
-            {params.error}
-          </div>
-        )}
+    <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center p-6">
+      {/* Background glow orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full blur-3xl opacity-20" style={{ background: 'radial-gradient(circle, #7c3aed, transparent)' }} />
+        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full blur-3xl opacity-10" style={{ background: 'radial-gradient(circle, #2563eb, transparent)' }} />
+      </div>
 
-        {params?.message && (
-          <div className="bg-green-50 text-green-700 border border-green-200 p-3 rounded-md mb-4 text-sm font-medium">
-            {params.message}
-          </div>
-        )}
+      <div className="w-full max-w-md relative z-10">
+        <div className="rounded-2xl p-8" style={{
+          background: 'rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.4)'
+        }}>
 
-        <form className="flex flex-col gap-4" action={login}>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-medium text-gray-700">Email:</label>
-            <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              required 
-              className="border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-600 outline-none" 
-            />
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(192, 132, 252, 0.1)', border: '1px solid rgba(192, 132, 252, 0.2)', color: '#c084fc' }}>
+              ✦ Welcome Back
+            </div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Sign in</h1>
+            <p className="text-slate-400 mt-2 text-sm">Access your AdFlow Pro dashboard</p>
           </div>
-          
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-sm font-medium text-gray-700">Password:</label>
-            <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              required 
-              className="border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-600 outline-none" 
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className="bg-blue-600 text-white font-medium p-2 rounded-md hover:bg-blue-700 transition"
-          >
-            Log in
-          </button>
-        </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account? <Link href="/register" className="text-blue-600 hover:underline">Sign up</Link>
-        </p>
+          {params?.message && (
+            <div className="rounded-lg p-3 mb-6 text-sm font-medium text-center" style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)', color: '#86efac' }}>
+              {params.message}
+            </div>
+          )}
+
+          {params?.error && (
+            <div className="rounded-lg p-3 mb-6 text-sm font-medium text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>
+              {params.error}
+            </div>
+          )}
+
+          <form className="flex flex-col gap-5" action={login}>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Address</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="rounded-lg p-3 text-white text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-purple-400/50"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="rounded-lg p-3 text-white text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-purple-400/50"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-lg font-bold text-sm mt-2 transition-all active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #2563eb)',
+                color: 'white',
+                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)'
+              }}
+            >
+              Sign In to Account
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Don't have an account?{' '}
+            <Link href="/register" className="font-semibold hover:underline" style={{ color: '#c084fc' }}>Sign up</Link>
+          </p>
+        </div>
       </div>
     </div>
   )

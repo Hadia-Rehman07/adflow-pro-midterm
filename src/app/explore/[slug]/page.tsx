@@ -1,155 +1,213 @@
-import { createClient } from '@/utils/supabase/server'
-import Link from 'next/link'
+"use client"
+
+import { createClient } from '@/utils/supabase/client'
 import { notFound } from 'next/navigation'
+import { useEffect, useState, use } from 'react'
 
-export default async function AdDetailPage(props: { params: Promise<{ slug: string }> }) {
-  const { slug } = await props.params;
-  const supabase = await createClient()
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
 
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: ad } = await supabase
-    .from('ads')
-    .select('*, ad_media(*), packages(name), cities(name), categories(name), seller_profiles(display_name, phone)')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
+export default function AdDetailPage({ params }: PageProps) {
+  const { slug } = use(params);
+  const supabase = createClient();
 
-  if (!ad) {
-    notFound()
-  }
+  const [ad, setAd] = useState<any>(null);
+  const [sellerDisplayName, setSellerDisplayName] = useState("AdFlow User");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [address, setAddress] = useState("Flat 3B, Clifton Block 5, Karachi");
+  const [phone, setPhone] = useState("0300-9999999");
 
-  const media = ad.ad_media && ad.ad_media.length > 0 ? ad.ad_media[0] : null
-  const pkgName = (ad.packages?.name || 'basic').toLowerCase()
-  const BADGE: Record<string, string> = { basic: '#94a3b8', standard: '#60a5fa', premium: '#c084fc' }
-  const badgeColor = BADGE[pkgName] || BADGE.basic
+  useEffect(() => {
+    async function fetchData() {
+      const { data } = await supabase
+        .from('ads')
+        .select('*, ad_media(*), packages(name), categories(name)')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (data) {
+        setAd(data);
+        const { data: seller } = await supabase
+          .from('seller_profiles')
+          .select('display_name')
+          .eq('user_id', data.user_id)
+          .maybeSingle();
+        if (seller?.display_name) setSellerDisplayName(seller.display_name);
+      }
+    }
+    fetchData();
+  }, [slug]);
+
+  if (!ad) return <div className="p-24 text-center text-white">Loading...</div>;
+
+  const handleSendMessage = async () => {
+    if (!msg) return;
+    const { error } = await supabase.from('notifications').insert([
+      {
+        user_id: ad.user_id,
+        title: 'New Inquiry',
+        message: `Message for ${ad.title}: ${msg}`,
+        type: 'message'
+      }
+    ]);
+    if (!error) {
+      alert("Message Sent to Seller!");
+      setMsg("");
+      setIsChatOpen(false);
+    }
+  };
+
+  const handleConfirmPurchase = async () => {
+    const totalAmount = ad.price + (ad.price * 0.02);
+    const randomRef = `TXN-${Math.floor(Math.random() * 1000000)}`;
+
+    const { error: payError } = await supabase.from('payments').insert([
+      {
+        ad_id: ad.id,
+        amount: totalAmount,
+        status: 'verified',
+        method: 'Card',
+        transaction_ref: randomRef
+      }
+    ]);
+
+    if (payError) {
+      alert("Payment Error: " + payError.message);
+      return;
+    }
+
+    const { error: notifyError } = await supabase.from('notifications').insert([
+      {
+        user_id: ad.user_id,
+        title: 'Item Sold!',
+        message: `Sold! ${ad.title} purchased for $${totalAmount}. Address: ${address}, Phone: ${phone}`,
+        type: 'sale'
+      }
+    ]);
+
+    if (!notifyError) {
+      alert("Purchase Successful! Record stored in Supabase.");
+      setIsPurchaseOpen(false);
+    }
+  };
+
+  const publishDate = ad.created_at
+    ? new Date(ad.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Recently Published';
 
   return (
-    <div className="w-full max-w-7xl mt-8 mb-24 px-6 mx-auto">
-      <Link href="/explore" className="inline-flex items-center gap-2 text-sm mb-8 text-slate-400 hover:text-white transition-colors">
-        ← Back to Explore
-      </Link>
+    <div
+      className="w-full min-h-screen font-sans text-white"
+      style={{ background: 'linear-gradient(145deg, rgba(124,58,237,0.2), rgba(192,132,252,0.15))' }}
+    >
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left — Image Gallery */}
-        <div className="flex-1">
-          {/* Main Image */}
-          <div className="w-full rounded-2xl overflow-hidden relative" style={{ height: '420px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            {media?.thumbnail_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={media.thumbnail_url} alt={ad.title} className="w-full h-full object-cover" />
+      {/* --- CONTACT MODAL --- */}
+      {isChatOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-[#0c0f1d] border border-white/10 rounded-[28px] w-full max-w-[440px] shadow-2xl flex flex-col h-[520px]">
+            <div className="p-6 border-b border-white/5 flex justify-between">
+              <div><h3 className="text-sm font-black uppercase">Contact Seller</h3><p className="text-[10px] text-slate-500">Responds in 1 hour</p></div>
+              <button onClick={() => setIsChatOpen(false)}>✕</button>
+            </div>
+            <div className="flex-1 p-10 flex flex-col items-center justify-center text-center">
+              <p className="text-slate-400 font-medium mb-4">Chatting with <span className="text-white font-bold">{sellerDisplayName}</span></p>
+            </div>
+            <div className="p-4 border-t border-white/5 bg-[#0a0d18]">
+              <div className="relative">
+                <input value={msg} onChange={(e) => setMsg(e.target.value)} type="text" placeholder="Type message..." className="w-full py-4 pl-6 pr-16 bg-[#060810] border border-white/5 rounded-full outline-none" />
+                <button onClick={handleSendMessage} className="absolute right-2 top-2 w-10 h-10 bg-purple-600 rounded-full">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- PURCHASE MODAL --- */}
+      {isPurchaseOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-[#0d101a] border border-white/10 rounded-[32px] w-full max-w-[500px] shadow-2xl p-8">
+            <h3 className="text-2xl font-black uppercase mb-2">Complete Purchase</h3>
+            <div className="space-y-4 my-6">
+              <div className="flex justify-between text-slate-400"><span>Item Price</span><span className="text-white font-bold">${ad.price}</span></div>
+              <div className="flex justify-between text-slate-400"><span>Service Fee (2%)</span><span className="text-purple-400 font-bold">${(ad.price * 0.02).toFixed(2)}</span></div>
+              <div className="flex justify-between pt-4 border-t border-white/5"><span className="text-lg font-black">Total to Pay</span><span className="text-3xl font-black">${(ad.price + (ad.price * 0.02)).toLocaleString()}</span></div>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div><label className="text-[10px] text-slate-500 font-bold uppercase mb-1 block">DELIVERY ADDRESS</label><input value={address} onChange={(e) => setAddress(e.target.value)} type="text" className="w-full py-3 pl-4 bg-[#111421] border border-white/5 rounded-lg text-sm text-slate-200" /></div>
+              <div><label className="text-[10px] text-slate-500 font-bold uppercase mb-1 block">PHONE NUMBER</label><input value={phone} onChange={(e) => setPhone(e.target.value)} type="text" className="w-full py-3 pl-4 bg-[#111421] border border-white/5 rounded-lg text-sm text-slate-200" /></div>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => setIsPurchaseOpen(false)} className="flex-1 py-4 bg-white/5 rounded-xl font-bold">Cancel</button>
+              <button onClick={handleConfirmPurchase} className="flex-1 py-4 bg-[#818cf8] hover:bg-[#a5b4fc] rounded-xl font-black">Confirm Purchase</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- PAGE CONTENT --- */}
+      <div className="w-full pt-20 pb-10 px-6 max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold uppercase tracking-tight">{ad.title}</h1>
+          <p className="text-slate-500 text-xs font-bold mt-2 uppercase tracking-widest">Published on: {publishDate}</p>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row gap-10">
+        <div className="flex-1 space-y-8">
+          <div className="rounded-3xl overflow-hidden aspect-video bg-purple-500/5 border border-purple-500/20 flex items-center justify-center relative backdrop-blur-sm">
+            {ad.ad_media && ad.ad_media.length > 0 ? (
+              <img src={ad.ad_media[0].original_url} className="w-full h-full object-cover" alt={ad.title} />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                <div className="text-6xl mb-4 opacity-30">🖼️</div>
-                <span className="text-slate-600 text-sm">No image available</span>
+              <div className="text-center">
+                <span className="text-8xl block mb-4">🖼️</span>
+                <p className="text-slate-500 text-sm">No Image Available</p>
               </div>
             )}
-            {/* Package badge overlaid */}
-            <span className="absolute top-4 left-4 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full" style={{ background: `${badgeColor}20`, color: badgeColor, border: `1px solid ${badgeColor}40`, backdropFilter: 'blur(8px)' }}>
-              {ad.packages?.name || 'Basic'} Package
-            </span>
           </div>
 
-          {/* More media thumbnails */}
-          {ad.ad_media && ad.ad_media.length > 1 && (
-            <div className="flex gap-3 mt-4 flex-wrap">
-              {ad.ad_media.slice(1).map((m: any) => (
-                <div key={m.id} className="w-24 h-24 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-                  {m.thumbnail_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.thumbnail_url} alt="media" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-600 text-xs">N/A</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="rounded-3xl p-10 bg-white/5 border border-white/10 backdrop-blur-md">
+            <h3 className="text-[10px] font-black uppercase text-purple-400 mb-6">Description</h3>
+            <p className="text-slate-200 text-lg leading-relaxed">{ad.description}</p>
+          </div>
 
-          {/* Description */}
-          <div className="mt-8 rounded-2xl p-8" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div className="flex flex-wrap gap-2 mb-6">
-              <span className="text-xs px-3 py-1 rounded-full font-semibold" style={{ background: 'rgba(192,132,252,0.15)', color: '#c084fc' }}>
-                {ad.categories?.name || 'Uncategorized'}
-              </span>
-              <span className="text-xs px-3 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }}>
-                {ad.cities?.name || 'Any Location'}
-              </span>
-              <span className="text-xs px-3 py-1 rounded-full font-semibold text-slate-600" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                Published {new Date(ad.publish_at).toLocaleDateString()}
-              </span>
-            </div>
-
-            <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight mb-6">{ad.title}</h1>
-
-            <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Description</h2>
-            <p className="text-slate-300 whitespace-pre-wrap leading-relaxed text-base">{ad.description}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InfoTile label="Category" value={ad.categories?.name} emoji="📦" />
+            <InfoTile label="Media Files" value={`${ad.ad_media?.length || 0} Images`} emoji="🖼️" />
+            <InfoTile label="Verified Seller" value={sellerDisplayName} emoji="👤" />
           </div>
         </div>
 
-        {/* Right — Sticky Card */}
-        <div className="w-full lg:w-80 shrink-0">
-          <div className="rounded-2xl p-6 lg:sticky lg:top-24" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-            {/* Seller Info */}
-            <div className="mb-6 pb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Listed By</div>
-              <div className="font-bold text-white text-lg">{ad.seller_profiles?.display_name || 'Anonymous Seller'}</div>
-              <span className="text-xs mt-1 inline-block" style={{ color: badgeColor }}>✓ Verified Seller</span>
+        <aside className="w-full lg:w-[400px]">
+          <div className="rounded-[40px] p-10 sticky top-24 bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+            <p className="text-[10px] text-purple-400 font-black uppercase mb-3 tracking-widest">Asking Price</p>
+            <h2 className="text-5xl font-black mb-10">${ad.price?.toLocaleString()}</h2>
+            <div className="space-y-4">
+              <button onClick={() => setIsPurchaseOpen(true)} className="w-full py-5 bg-purple-600 hover:bg-purple-500 rounded-2xl font-black text-xs uppercase shadow-xl transition-all">🛍️ Instant Purchase</button>
+              <button onClick={() => setIsChatOpen(true)} className="w-full py-5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-bold text-xs uppercase transition-all">📞 Contact Seller</button>
             </div>
-
-            {/* CTA Buttons */}
-            <div className="space-y-3">
-              {ad.seller_profiles?.phone ? (
-                <a
-                  href={`tel:${ad.seller_profiles.phone}`}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'white' }}
-                >
-                  📞 Contact Seller
-                </a>
-              ) : (
-                <div className="text-center text-xs text-slate-600 py-2">No contact info provided.</div>
-              )}
-
-              {user ? (
-                <Link
-                  href={`/packages?ad_id=${ad.id}`}
-                  className="btn-purple w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
-                >
-                  🛒 Buy Now
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all"
-                  style={{ background: 'rgba(192,132,252,0.1)', border: '1px solid rgba(192,132,252,0.3)', color: '#c084fc' }}
-                >
-                  Log In to Buy Now
-                </Link>
-              )}
-            </div>
-
-            {/* Package info */}
-            <div className="mt-6 pt-6 space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Package Benefits</div>
-              {[
-                pkgName === 'premium' && '30 Days Duration',
-                pkgName === 'standard' && '15 Days Duration',
-                pkgName === 'basic' && '7 Days Duration',
-                pkgName !== 'basic' && '⚡ Priority Placement',
-                pkgName === 'premium' && '🔥 Homepage Featured',
-                '✅ Moderation Verified',
-              ].filter(Boolean).map((feature) => (
-                <div key={String(feature)} className="flex items-center gap-2 text-sm text-slate-400">
-                  <span style={{ color: '#c084fc' }}>✦</span>
-                  {feature}
-                </div>
-              ))}
+            <div className="mt-8 pt-8 border-t border-white/5">
+              <p className="text-[10px] text-slate-500 font-bold uppercase mb-4">Quick Specs</p>
+              <div className="flex justify-between text-xs py-2 border-b border-white/5"><span className="text-slate-400">Ad Status</span><span>{ad.status || 'Active'}</span></div>
+              <div className="flex justify-between text-xs py-2 border-b border-white/5"><span className="text-slate-400">Package</span><span>{ad.packages?.name || 'Standard'}</span></div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   )
 }
 
+function InfoTile({ label, value, emoji }: any) {
+  return (
+    <div className="p-6 rounded-2xl flex items-center gap-4 bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+      <div className="text-xl opacity-60">{emoji}</div>
+      <div>
+        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">{label}</p>
+        <p className="text-sm font-black truncate">{value || 'N/A'}</p>
+      </div>
+    </div>
+  )
+}

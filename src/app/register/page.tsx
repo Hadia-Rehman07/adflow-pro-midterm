@@ -24,19 +24,24 @@ export default async function RegisterPage(props: { searchParams: Promise<{ erro
             <p className="text-slate-400 mt-2 text-sm">Join AdFlow Pro's premium marketplace</p>
           </div>
 
+          {/* Error Message Display */}
           {params?.error && (
-            <div className="rounded-lg p-3 mb-6 text-sm font-medium" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>
-              {params.error}
+            <div className="rounded-lg p-3 mb-6 text-sm font-medium text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>
+              {params.error === "User already registered"
+                ? "User Already Registered."
+                : params.error}
             </div>
           )}
 
+          {/* Registration Form */}
           <form className="flex flex-col gap-5" action={signup}>
+
             {/* Full Name */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="name" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Full Name</label>
+              <label htmlFor="full_name" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Full Name</label>
               <input
-                id="name"
-                name="name"
+                id="full_name"
+                name="full_name"
                 type="text"
                 required
                 className="rounded-lg p-3 text-white text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-purple-400/50"
@@ -74,24 +79,29 @@ export default async function RegisterPage(props: { searchParams: Promise<{ erro
               />
             </div>
 
-            {/* Requested Role */}
+            {/* Role Selection */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="role" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Requested Role</label>
+              <label htmlFor="role" className="text-xs font-bold text-slate-400 uppercase tracking-widest">Account Type</label>
               <select
                 id="role"
                 name="role"
+                required
                 className="rounded-lg p-3 text-white text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-purple-400/50 cursor-pointer"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
               >
-                <option value="client" style={{ background: '#1e1b4b' }}>Buyer (Default)</option>
-                <option value="client" style={{ background: '#1e1b4b' }}>Seller</option>
-                <option value="moderator" style={{ background: '#1e1b4b' }}>Moderator</option>
+                <option value="client" className="bg-[#1e1b4b]">Buyer / Seller</option>
+                <option value="moderator" className="bg-[#1e1b4b]">Moderator</option>
               </select>
             </div>
 
             <button
               type="submit"
-              className="btn-purple w-full py-3 rounded-lg font-bold text-sm mt-2"
+              className="w-full py-3 rounded-lg font-bold text-sm mt-2 transition-all active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #2563eb)',
+                color: 'white',
+                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)'
+              }}
             >
               Apply & Create Account
             </button>
@@ -99,11 +109,10 @@ export default async function RegisterPage(props: { searchParams: Promise<{ erro
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold" style={{ color: '#c084fc' }}>Log in</Link>
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: '#c084fc' }}>Log in</Link>
           </p>
         </div>
       </div>
     </div>
   )
 }
-

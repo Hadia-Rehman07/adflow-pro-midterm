@@ -1,86 +1,148 @@
-import { requireRole } from '@/utils/roles'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
-import Link from 'next/link'
+'use client'
 
-export default async function ClientAdDetailsPage(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params;
-  const { authorized, redirect: redirectPath } = await requireRole(['client', 'super_admin'])
-  
-  if (!authorized) {
-    redirect(redirectPath!)
-  }
-  
-  const supabase = await createClient()
-  
-  const { data: ad, error } = await supabase
-    .from('ads')
-    .select('*, ad_media(*)')
-    .eq('id', id)
-    .single()
-    
-  if (error || !ad) {
-    return <div className="p-12 text-center text-red-500 font-bold">Ad not found.</div>
+import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { submitAdForReview, deleteAdAction } from '../new/actions'
+
+export default function ClientAdDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const [ad, setAd] = useState<any>(null)
+  const [adMedia, setAdMedia] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function fetchData() {
+      const { id } = await params
+      const { data: adData } = await supabase.from('ads').select('*').eq('id', id).single()
+
+      if (!adData) {
+        setLoading(false)
+        return
+      }
+
+      const { data: mediaData } = await supabase.from('ad_media').select('*').eq('ad_id', id)
+
+      setAd(adData)
+      setAdMedia(mediaData || [])
+      setLoading(false)
+    }
+    fetchData()
+  }, [params, supabase])
+
+  if (loading) return <div className="p-20 text-center text-white font-bold tracking-widest">LOADING...</div>
+
+  if (!ad) {
+    return (
+      <div className="p-12 text-center bg-[#0a0e1a] min-h-screen flex flex-col items-center justify-center font-sans text-white">
+        <h1 className="text-red-500 text-5xl font-black mb-4 tracking-tighter">AD NOT FOUND</h1>
+        <Link href="/client" className="text-blue-400 hover:underline font-bold">Return to Dashboard</Link>
+      </div>
+    )
   }
 
   return (
-    <div className="w-full max-w-5xl mt-12 mb-24 p-6 flex flex-col gap-6">
-      <Link href="/client" className="text-blue-600 hover:underline mb-2">&larr; Back to Dashboard</Link>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 border border-gray-200 rounded-lg shadow-sm gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{ad.title}</h1>
-          <div className="flex items-center gap-3 mt-3">
-            <span className="bg-gray-100 text-gray-800 text-xs font-bold px-3 py-1 rounded border border-gray-300 uppercase tracking-widest">
-              {ad.status}
+    <div className="w-full max-w-7xl mt-12 mb-24 px-6 mx-auto flex flex-col gap-8 min-h-screen text-white font-sans">
+
+      {/* 1. Header with Management Buttons */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <Link href="/client" className="text-slate-500 hover:text-white font-bold text-xs uppercase tracking-widest group">
+          <span className="group-hover:-translate-x-1 transition-transform inline-block">←</span> Back to Dashboard
+        </Link>
+
+        {/* Action Buttons: Always Visible for Management */}
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/client/ads/${ad.id}/edit`}
+            className="bg-white/5 text-slate-300 border border-white/10 px-6 py-3 rounded-xl font-bold hover:bg-white/10 transition-all text-[10px] uppercase tracking-widest"
+          >
+            Update Ad
+          </Link>
+
+          <button
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to delete this ad permanently?")) {
+                await deleteAdAction(ad.id)
+                router.push('/client')
+              }
+            }}
+            className="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all text-[10px] uppercase tracking-widest"
+          >
+            Delete Ad
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Main Ad Info Section */}
+      <div className="bg-[#111827] border border-white/5 p-10 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
+        <div className="space-y-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded font-bold uppercase tracking-tighter">
+              {ad.category || 'General'}
+            </span>
+            <h1 className="text-4xl font-extrabold text-white tracking-tight uppercase">{ad.title}</h1>
+          </div>
+          <div className="flex items-center gap-6">
+            <span className="text-[10px] font-bold px-4 py-2 rounded-full border border-white/10 uppercase tracking-widest bg-white/5">
+              {ad.status.replace('_', ' ')}
+            </span>
+            <span className="text-3xl font-black text-white">
+              ${Number(ad.price || 0).toLocaleString()}
             </span>
           </div>
         </div>
-        
+
         {ad.status === 'draft' && (
-          <a href={`/client/ads/${ad.id}/submit`} className="bg-blue-600 text-white px-6 py-3 rounded-md shadow-sm hover:bg-blue-700 font-medium transition">
-            Submit for Review
-          </a>
+          <button
+            onClick={async () => {
+              await submitAdForReview(ad.id)
+              router.refresh()
+            }}
+            className="bg-blue-600 text-white px-10 py-4 rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:bg-blue-700 font-bold text-xs tracking-widest uppercase transition-all"
+          >
+            SUBMIT FOR REVIEW
+          </button>
         )}
-        
-        {ad.status === 'under_review' && (
-           <span className="text-orange-700 font-medium border border-orange-200 bg-orange-50 px-5 py-3 rounded-md shadow-sm">
-             Under Moderator Review
-           </span>
-        )}
-        
-        {ad.status === 'payment_pending' && (
-          <Link href={`/client/ads/${ad.id}/payment`} className="bg-green-600 text-white px-6 py-3 rounded-md shadow-sm hover:bg-green-700 font-medium transition text-center">
-            Proceed to Payment
-          </Link>
-        )}
+        <div className="absolute -right-20 -top-20 bg-blue-600/5 w-64 h-64 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-        <h2 className="text-xl font-bold mb-4 border-b pb-2">Ad Details</h2>
-        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{ad.description}</p>
-      </div>
-      
-      {ad.ad_media && ad.ad_media.length > 0 && (
-        <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-          <h2 className="text-xl font-bold mb-4 border-b pb-2">Media Preview</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {ad.ad_media.map((media: any) => (
-              <div key={media.id} className="border border-gray-200 rounded-md overflow-hidden bg-gray-50 flex flex-col p-2">
-                {media.thumbnail_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={media.thumbnail_url} alt="Media thumbnail" className="w-full h-40 object-cover rounded shadow-sm border border-gray-100" />
-                ) : (
-                  <div className="w-full h-40 bg-gray-200 flex items-center justify-center text-gray-400 rounded">
-                    No preview
-                  </div>
-                )}
-                <span className="text-xs text-gray-500 mt-3 font-mono break-all line-clamp-2" title={media.original_url}>{media.original_url}</span>
-              </div>
-            ))}
+      {/* 3. Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2">
+          <div className="bg-[#111827]/50 border border-white/5 p-10 rounded-3xl min-h-[350px]">
+            <h2 className="text-[11px] font-bold text-blue-500 uppercase tracking-[0.3em] mb-10">Ad Description</h2>
+            <p className="text-slate-300 leading-relaxed text-xl font-normal">"{ad.description}"</p>
           </div>
         </div>
-      )}
+
+        {/* Media Gallery with Fix */}
+        <div className="bg-[#111827]/50 border border-white/5 p-8 rounded-3xl">
+          <h2 className="text-[11px] font-bold text-blue-500 uppercase tracking-[0.3em] mb-8">Media Gallery</h2>
+          {adMedia.length > 0 ? (
+            <div className="grid gap-6">
+              {adMedia.map((media: any) => (
+                <div key={media.id} className="rounded-2xl overflow-hidden bg-black aspect-square border border-white/10 shadow-xl group">
+                  <img
+                    src={media.original_url || media.thumbnail_url}
+                    alt="Ad Content"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as any).src = 'https://placehold.co/600x600/111827/white?text=Broken+Image+URL'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full h-64 bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-slate-700 rounded-2xl gap-4">
+              <span className="text-5xl opacity-10">🖼️</span>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">No Media Assets Detected</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
