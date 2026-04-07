@@ -91,6 +91,7 @@ export default async function RegisterPage(props: { searchParams: Promise<{ erro
               >
                 <option value="client" className="bg-[#1e1b4b]">Buyer / Seller</option>
                 <option value="moderator" className="bg-[#1e1b4b]">Moderator</option>
+                <option value="admin" className="bg-[#1e1b4b]">System Administrator</option> {/* Naya Admin Option */}
               </select>
             </div>
 

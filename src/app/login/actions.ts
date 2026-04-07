@@ -20,7 +20,7 @@ export async function login(formData: FormData) {
     return redirect('/login?error=' + encodeURIComponent(error.message))
   }
 
-  // 2. Database se role check karein (Kyube Auth metadata kabhi kabhi delay karta hai)
+  // 2. Database se role check karein
   const { data: userData, error: roleError } = await supabase
     .from('users')
     .select('role')
@@ -29,16 +29,17 @@ export async function login(formData: FormData) {
 
   if (roleError || !userData) {
     console.error("Role fetching error:", roleError)
-    // Agar role na mile toh default dashboard par bhej dein
     return redirect('/dashboard')
   }
 
   revalidatePath('/', 'layout')
 
-  // 3. Logic: Moderator ko moderator dashboard par, baaki sab ko client dashboard par
-  if (userData.role === 'moderator') {
-    return redirect('/moderator/ads')
+  // 3. Logic: Role ke mutabiq sahi jagah bhejein
+  if (userData.role === 'admin') {
+    return redirect('/admin') // Admin ke liye naya rasta
+  } else if (userData.role === 'moderator') {
+    return redirect('/moderator/ads') // Moderator ka purana rasta
   } else {
-    return redirect('/dashboard')
+    return redirect('/dashboard') // Client ka purana rasta
   }
 }

@@ -1,8 +1,13 @@
-import { selectPackageAction } from './actions'
+'use client'
+import { useState, use } from 'react'
+import PaymentModal from '@/components/layout/PaymentModal'
 
-export default async function PackagesPage(props: { searchParams?: Promise<{ ad_id?: string }> }) {
-  const searchParams = props.searchParams ? await props.searchParams : undefined;
-  const adId = searchParams?.ad_id;
+export default function PackagesPage(props: { searchParams: Promise<{ adId?: string }> }) {
+  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+
+  // URL se adId pakadne ka sahi tarika (Dashboard ke Link se match karta hua)
+  const searchParams = use(props.searchParams);
+  const adId = searchParams?.adId;
 
   const plans = [
     {
@@ -55,9 +60,11 @@ export default async function PackagesPage(props: { searchParams?: Promise<{ ad_
         <p className="text-xl text-slate-400 leading-relaxed">
           Rank higher and gain better visibility. Dynamic scheduling and exposure packages for every business tier.
         </p>
+
+        {/* Warning agar user direct page par aa jaye baghair Ad select kiye */}
         {!adId && (
-          <div className="mt-6 inline-block text-sm px-4 py-2 rounded-lg" style={{ background: 'rgba(251, 146, 60, 0.1)', border: '1px solid rgba(251, 146, 60, 0.2)', color: '#fb923c' }}>
-            ⚠️ Visit this page from an Ad to link the package to your listing.
+          <div className="mt-6 inline-block text-sm px-6 py-3 rounded-xl animate-bounce" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
+            ⚠️ Error: No Ad selected. Please go to your Dashboard and click "Promote Ad".
           </div>
         )}
       </div>
@@ -102,33 +109,33 @@ export default async function PackagesPage(props: { searchParams?: Promise<{ ad_
                 ))}
               </ul>
 
-              <form action={selectPackageAction}>
-                <input type="hidden" name="ad_id" value={adId || ''} />
-                <input type="hidden" name="package_id" value={plan.id} />
-                <input type="hidden" name="package_name" value={plan.name} />
-                <input type="hidden" name="amount" value={plan.amount} />
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
-                  style={plan.highlight ? {
-                    background: 'linear-gradient(90deg, #7c3aed, #c084fc)',
-                    color: 'white',
-                    cursor: 'pointer'
-                  } : {
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: 'white',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Purchase {plan.name}
-                </button>
-              </form>
+              <button
+                onClick={() => setSelectedPlan(plan)}
+                disabled={!adId} // Agar ID nahi hai toh button disable kar dein taake ghalti na ho
+                className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${!adId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                style={plan.highlight ? {
+                  background: 'linear-gradient(90deg, #7c3aed, #c084fc)',
+                  color: 'white',
+                } : {
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'white',
+                }}
+              >
+                {!adId ? 'Select an Ad First' : `Purchase ${plan.name}`}
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={!!selectedPlan}
+        onClose={() => setSelectedPlan(null)}
+        plan={selectedPlan}
+        adId={adId} // Ye ab sahi URL se pass ho raha hai
+      />
     </div>
   )
 }

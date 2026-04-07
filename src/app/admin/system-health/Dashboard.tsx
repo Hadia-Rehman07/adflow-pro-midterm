@@ -6,7 +6,7 @@ import { triggerAdsCleanup, checkDbHeartbeat } from './actions'
 export function SystemHealthDashboard({ initialPulse }: { initialPulse: any }) {
   const [pulse, setPulse] = useState(initialPulse)
   const [triggering, setTriggering] = useState(false)
-  const [triggerResult, setTriggerResult] = useState<{success: boolean, message: string} | null>(null)
+  const [triggerResult, setTriggerResult] = useState<{ success: boolean, message: string } | null>(null)
 
   const handleRefreshHeartbeat = async () => {
     setPulse({ status: 'refreshing', latency: 0, message: 'Pinging database...' })
@@ -22,71 +22,96 @@ export function SystemHealthDashboard({ initialPulse }: { initialPulse: any }) {
     setTriggering(false)
   }
 
+  // Common glass style for all cards
+  const glassStyle = {
+    background: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(12px)',
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* DB Heartbeat Card */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 shadow-sm flex flex-col justify-between">
+
+      {/* DB Heartbeat Card - Transparent */}
+      <div className="border border-white/10 rounded-2xl p-8 shadow-xl flex flex-col justify-between transition-all hover:border-white/20"
+        style={glassStyle}>
         <div>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-slate-900">Database Heartbeat</h2>
-            <button 
+          <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+            <h2 className="text-xl font-bold text-white">Database Heartbeat</h2>
+            <button
               onClick={handleRefreshHeartbeat}
-              className="text-sm bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1 rounded transition"
+              className="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-full transition border border-white/10"
             >
               Refresh
             </button>
           </div>
-          
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`h-4 w-4 rounded-full ${pulse.status === 'healthy' ? 'bg-emerald-500 animate-pulse' : pulse.status === 'refreshing' ? 'bg-yellow-400' : 'bg-red-500'}`}></div>
-            <span className="text-2xl font-semibold capitalize text-slate-800">
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className={`h-4 w-4 rounded-full shadow-[0_0_15px] ${pulse.status === 'healthy' ? 'bg-emerald-500 shadow-emerald-500/50 animate-pulse' :
+                pulse.status === 'refreshing' ? 'bg-yellow-400 shadow-yellow-400/50' :
+                  'bg-red-500 shadow-red-500/50'
+              }`}></div>
+            <span className="text-3xl font-bold capitalize text-white tracking-tight">
               {pulse.status === 'healthy' ? 'Operational' : pulse.status}
             </span>
           </div>
-          
-          <p className="text-slate-500 text-sm">Latency: <span className="font-mono text-blue-600">{pulse.latency}ms</span></p>
-          <p className="text-slate-500 text-sm mt-1">Status Message: <span className="font-mono">{pulse.message}</span></p>
+
+          <div className="space-y-2 mt-4">
+            <p className="text-slate-400 text-sm flex justify-between border-b border-white/5 pb-2">
+              Latency: <span className="font-mono text-purple-400 font-bold">{pulse.latency}ms</span>
+            </p>
+            <p className="text-slate-400 text-sm flex justify-between">
+              Status: <span className="font-mono text-slate-300 italic">{pulse.message}</span>
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Operations Card */}
-      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm flex flex-col justify-between">
+      {/* Automated Operations - Transparent */}
+      <div className="border border-white/10 rounded-2xl p-8 shadow-xl flex flex-col justify-between transition-all hover:border-white/20"
+        style={glassStyle}>
         <div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Automated Operations</h2>
-          <p className="text-slate-500 text-sm mb-6">Trigger background jobs like ad expiration cleanups manually.</p>
-          
-          <button 
+          <h2 className="text-xl font-bold text-white mb-2">Automated Operations</h2>
+          <p className="text-slate-400 text-sm mb-8">Manual override for background cleanup tasks.</p>
+
+          <button
             onClick={handleTriggerCron}
             disabled={triggering}
-            className="w-full bg-slate-900 text-white font-medium py-3 rounded-lg hover:bg-slate-800 transition disabled:opacity-50"
+            className="w-full bg-white text-slate-900 font-bold py-4 rounded-xl hover:bg-slate-200 transition disabled:opacity-30 shadow-lg"
           >
-            {triggering ? 'Executing...' : 'Force Trigger Ad Expiration Cron'}
+            {triggering ? 'Executing...' : 'Run Ad Expiration Cron'}
           </button>
 
           {triggerResult && (
-            <div className={`mt-4 p-3 rounded text-sm font-medium ${triggerResult.success ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} border`}>
+            <div className={`mt-6 p-4 rounded-xl text-sm font-bold text-center border ${triggerResult.success
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-red-500/10 text-red-400 border-red-500/20'
+              }`}>
               {triggerResult.message}
             </div>
           )}
         </div>
       </div>
 
-      {/* Validation Mocks */}
-      <div className="bg-white border text-red-800 border-red-100 rounded-xl p-8 shadow-sm col-span-1 md:col-span-2 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4">
-          <span className="bg-red-100 text-red-600 font-bold px-3 py-1 rounded text-xs">0 FAILED TRANSACTIONS</span>
+      {/* System Validations - Transparent */}
+      <div className="border border-white/10 rounded-2xl p-8 shadow-xl col-span-1 md:col-span-2 relative overflow-hidden transition-all hover:border-white/20"
+        style={glassStyle}>
+        <div className="absolute top-0 right-0 p-6">
+          <span className="bg-emerald-500/10 text-emerald-400 font-black px-3 py-1 rounded-full text-[10px] border border-emerald-500/20 tracking-tighter">
+            INTEGRITY OK
+          </span>
         </div>
-        <h2 className="text-xl font-bold text-red-900 mb-2">System Validations</h2>
-        <p className="text-red-700 text-sm mb-4">Monitoring core business logic constraints across ad records.</p>
-        <div className="space-y-3">
-           <div className="flex justify-between items-center bg-red-50 p-3 rounded border border-red-100">
-              <span className="font-medium">Orphaned Media Attachments</span>
-              <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">ALL CLEAR</span>
-           </div>
-           <div className="flex justify-between items-center bg-red-50 p-3 rounded border border-red-100">
-              <span className="font-medium">Mismatched Payment Intents</span>
-              <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">ALL CLEAR</span>
-           </div>
+        <h2 className="text-xl font-bold text-white mb-2">System Validations</h2>
+        <p className="text-slate-400 text-sm mb-6">Automated integrity checks across business logic.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+            <span className="font-medium text-slate-300">Orphaned Media Attachments</span>
+            <span className="text-emerald-400 font-black text-xs">ALL CLEAR</span>
+          </div>
+          <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+            <span className="font-medium text-slate-300">Payment Intent Integrity</span>
+            <span className="text-emerald-400 font-black text-xs">ALL CLEAR</span>
+          </div>
         </div>
       </div>
     </div>

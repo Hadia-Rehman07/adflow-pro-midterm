@@ -94,7 +94,7 @@ export default function ClientDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ads.map((ad) => (
-            <Link href={`/client/ads/${ad.id}`} key={ad.id} className="group bg-white/[0.02] border border-white/5 p-8 rounded-3xl hover:bg-white/[0.04] hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between h-full">
+            <div key={ad.id} className="group bg-white/[0.02] border border-white/5 p-8 rounded-3xl hover:bg-white/[0.04] hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between h-full">
               <div>
                 <div className="flex justify-between items-start mb-8">
                   <span className={`text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-tighter border ${ad.status === 'published'
@@ -120,15 +120,27 @@ export default function ClientDashboard() {
                 </p>
               </div>
 
-              <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-white transition-colors">
-                  Details
-                </span>
-                <span className="text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
-                  →
-                </span>
+              {/* --- FOOTER BUTTONS: DETAILS & PROMOTE AD --- */}
+              <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <Link href={`/client/ads/${ad.id}`} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                    Details
+                  </Link>
+                  <span className="text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
+                    →
+                  </span>
+                </div>
+
+                {/* NAYA BUTTON: Promote Ad */}
+                <Link
+                  href={`/packages?adId=${ad.id}`}
+                  className="w-full text-center py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-purple-600/10 text-purple-400 border border-purple-500/20 hover:bg-purple-600 hover:text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all"
+                >
+                  Promote Ad ✨
+                </Link>
               </div>
-            </Link>
+              {/* ------------------------------------------- */}
+            </div>
           ))}
         </div>
       </div>

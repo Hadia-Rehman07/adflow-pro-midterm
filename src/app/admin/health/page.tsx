@@ -4,11 +4,12 @@ import { createClient } from '@/utils/supabase/server'
 
 export default async function SystemHealthPage() {
   const { authorized, redirect: redirectPath } = await requireRole(['admin', 'super_admin'])
-  
+
   if (!authorized) redirect(redirectPath!)
-  
+
   const supabase = await createClient()
 
+  // Aapke existing table se data fetch ho raha hai
   const { data: logs } = await supabase
     .from('system_health_logs')
     .select('*')
@@ -16,34 +17,51 @@ export default async function SystemHealthPage() {
     .limit(20)
 
   return (
-    <div className="w-full max-w-5xl mt-12 mb-24 p-6">
-      <h1 className="text-3xl font-bold mb-6 w-full text-gray-900 border-b pb-4">System Health Logs</h1>
-      
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="p-4 font-semibold text-gray-900">Checked At</th>
-              <th className="p-4 font-semibold text-gray-900">Source</th>
-              <th className="p-4 font-semibold text-gray-900">Status</th>
-              <th className="p-4 font-semibold text-gray-900 text-right">Response Time (ms)</th>
+    <div className="w-full max-w-7xl mt-12 mb-24 p-6 mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-white">System Health Logs</h1>
+
+      {/* Transparent Card Design */}
+      <div className="rounded-2xl border border-white/10 shadow-xl overflow-hidden"
+        style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(12px)' }}>
+
+        <table className="w-full text-left text-sm text-slate-300">
+          <thead className="bg-white/5 border-b border-white/10">
+            <tr className="text-slate-400 uppercase text-[10px] tracking-widest font-bold">
+              <th className="p-5">Checked At</th>
+              <th className="p-5">Source</th>
+              <th className="p-5">Status</th>
+              <th className="p-5 text-right">Response Time</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-white/5">
             {logs?.map((log: any) => (
-              <tr key={log.id} className="hover:bg-gray-50 transition">
-                <td className="p-4">{new Date(log.checked_at).toLocaleString()}</td>
-                <td className="p-4 font-medium">{log.source}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${log.status === 'healthy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              <tr key={log.id} className="hover:bg-white/5 transition">
+                <td className="p-5 font-mono text-xs text-slate-500">
+                  {new Date(log.checked_at).toLocaleString()}
+                </td>
+                <td className="p-5 font-medium text-white">
+                  {log.source}
+                </td>
+                <td className="p-5">
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase border ${log.status === 'healthy'
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                      : 'bg-red-500/20 text-red-400 border-red-500/20'
+                    }`}>
                     {log.status}
                   </span>
                 </td>
-                <td className="p-4 text-right font-mono">{log.response_ms} ms</td>
+                <td className="p-5 text-right font-mono text-purple-400">
+                  {log.response_ms} ms
+                </td>
               </tr>
             ))}
+
             {(!logs || logs.length === 0) && (
-              <tr><td colSpan={4} className="p-12 text-center text-gray-500 font-medium">No health logs found. Trigger the /api/health/db endpoint or wait for cron.</td></tr>
+              <tr>
+                <td colSpan={4} className="p-20 text-center text-slate-500 font-medium italic">
+                  No health logs found. Trigger the heartbeat to see real-time data.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
