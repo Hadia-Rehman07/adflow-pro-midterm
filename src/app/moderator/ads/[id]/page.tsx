@@ -29,9 +29,6 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
     )
   }
 
-  // Transparent Glass Style
-  const glassStyle = { background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(12px)' };
-
   return (
     <div className="w-full max-w-6xl mt-12 mb-24 p-6 flex flex-col gap-6 mx-auto">
       <div className="flex items-center justify-between">
@@ -43,31 +40,28 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
 
       <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
 
-        {/* LEFT COLUMN: AD DETAILS (AB TRANSPARENT HAI) */}
-        <div
-          className="flex-1 w-full p-8 border border-white/10 rounded-2xl shadow-sm overflow-hidden text-white"
-          style={glassStyle}
-        >
-          <div className="border-b border-white/10 pb-4 mb-6">
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">{ad.title}</h1>
-            <p className="text-sm text-slate-400 mt-3 flex items-center gap-2 italic">
-              <span className="font-bold text-slate-200 not-italic uppercase text-[10px] bg-white/10 px-2 py-0.5 rounded">Owner:</span> {ad.users?.email}
+        {/* LEFT COLUMN: AD DETAILS */}
+        <div className="flex-1 w-full bg-white p-8 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="border-b pb-4 mb-6">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{ad.title}</h1>
+            <p className="text-sm text-gray-500 mt-3 flex items-center gap-2 italic">
+              <span className="font-bold text-slate-700 not-italic uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded">Owner:</span> {ad.users?.email}
             </p>
           </div>
 
           <div className="mb-10">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Description</h3>
-            <div className="text-slate-200 text-lg whitespace-pre-wrap leading-relaxed bg-white/5 p-6 rounded-xl border border-white/5 shadow-inner">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Description</h3>
+            <div className="text-gray-700 text-lg whitespace-pre-wrap leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-inner">
               {ad.description}
             </div>
           </div>
 
           <div>
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5">Media Attachments</h3>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-5">Media Attachments</h3>
             {ad.ad_media && ad.ad_media.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ad.ad_media.map((media: any) => (
-                  <div key={media.id} className="group relative border border-white/10 p-1 rounded-xl bg-white/5 hover:shadow-lg transition-all duration-300">
+                  <div key={media.id} className="group relative border p-1 rounded-xl bg-white hover:shadow-lg transition-all duration-300">
                     {media.thumbnail_url ? (
                       <img
                         src={media.thumbnail_url}
@@ -75,7 +69,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                         className="h-40 w-full object-cover rounded-lg"
                       />
                     ) : (
-                      <div className="h-40 w-full bg-white/5 rounded-lg flex items-center justify-center text-slate-500">No Image</div>
+                      <div className="h-40 w-full bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">No Image</div>
                     )}
                     <a
                       href={media.original_url}
@@ -88,14 +82,14 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                 ))}
               </div>
             ) : (
-              <div className="p-8 border-2 border-dashed border-white/5 rounded-xl text-center text-slate-500 text-sm italic">
+              <div className="p-8 border-2 border-dashed border-slate-100 rounded-xl text-center text-slate-400 text-sm italic">
                 No media uploaded for this listing.
               </div>
             )}
           </div>
         </div>
 
-        {/* RIGHT COLUMN: DECISION PANEL (YE PEHLE SE DARK THA) */}
+        {/* RIGHT COLUMN: DECISION PANEL */}
         <div className="w-full lg:w-96 shrink-0 lg:sticky lg:top-8">
           <div className="bg-slate-950 p-7 rounded-2xl shadow-2xl text-white border border-slate-800">
             <h3 className="font-bold border-b border-slate-800 pb-4 mb-6 flex items-center gap-2 text-sm tracking-widest uppercase">
@@ -104,6 +98,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
             </h3>
 
             <form action={moderateAd} className="flex flex-col gap-6">
+              {/* HIDDEN FIELDS - Critical for Action logic */}
               <input type="hidden" name="ad_id" value={ad.id} />
               <input type="hidden" name="userId" value={ad.user_id} />
               <input type="hidden" name="title" value={ad.title} />
@@ -114,7 +109,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                 </label>
                 <textarea
                   id="feedback"
-                  name="feedback"
+                  name="feedback" // Updated from 'note' to 'feedback'
                   rows={4}
                   className="w-full border border-slate-800 rounded-xl p-4 text-sm bg-slate-900 text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none resize-none transition-all"
                   placeholder="Explain your decision..."
