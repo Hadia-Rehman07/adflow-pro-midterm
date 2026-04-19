@@ -32,7 +32,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
   return (
     <div className="w-full max-w-6xl mt-12 mb-24 p-6 flex flex-col gap-6 mx-auto">
       <div className="flex items-center justify-between">
-        <Link href="/moderator/ads" className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition">
+        <Link href="/moderator/ads" className="text-sm font-medium text-purple-400 hover:text-purple-300 flex items-center gap-1 transition">
           &larr; Back to Moderation Queue
         </Link>
         <span className="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-400 border border-slate-700">ID: {id}</span>
@@ -40,28 +40,28 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
 
       <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
 
-        {/* LEFT COLUMN: AD DETAILS */}
-        <div className="flex-1 w-full bg-white p-8 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="border-b pb-4 mb-6">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{ad.title}</h1>
-            <p className="text-sm text-gray-500 mt-3 flex items-center gap-2 italic">
-              <span className="font-bold text-slate-700 not-italic uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded">Owner:</span> {ad.users?.email}
+        {/* LEFT COLUMN: AD DETAILS - Now Transparent */}
+        <div className="flex-1 w-full p-8 border border-white/10 rounded-2xl shadow-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(12px)' }}>
+          <div className="border-b border-white/10 pb-4 mb-6">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">{ad.title}</h1>
+            <p className="text-sm text-slate-400 mt-3 flex items-center gap-2 italic">
+              <span className="font-bold text-slate-300 not-italic uppercase text-[10px] bg-white/5 px-2 py-0.5 rounded border border-white/10">Owner:</span> {ad.users?.email}
             </p>
           </div>
 
           <div className="mb-10">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Description</h3>
-            <div className="text-gray-700 text-lg whitespace-pre-wrap leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-inner">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Description</h3>
+            <div className="text-slate-300 text-lg whitespace-pre-wrap leading-relaxed bg-white/5 p-6 rounded-xl border border-white/5 shadow-inner">
               {ad.description}
             </div>
           </div>
 
           <div>
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-5">Media Attachments</h3>
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5">Media Attachments</h3>
             {ad.ad_media && ad.ad_media.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ad.ad_media.map((media: any) => (
-                  <div key={media.id} className="group relative border p-1 rounded-xl bg-white hover:shadow-lg transition-all duration-300">
+                  <div key={media.id} className="group relative border border-white/10 p-1 rounded-xl bg-white/5 hover:shadow-lg transition-all duration-300">
                     {media.thumbnail_url ? (
                       <img
                         src={media.thumbnail_url}
@@ -69,7 +69,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                         className="h-40 w-full object-cover rounded-lg"
                       />
                     ) : (
-                      <div className="h-40 w-full bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">No Image</div>
+                      <div className="h-40 w-full bg-white/5 rounded-lg flex items-center justify-center text-slate-500">No Image</div>
                     )}
                     <a
                       href={media.original_url}
@@ -82,7 +82,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                 ))}
               </div>
             ) : (
-              <div className="p-8 border-2 border-dashed border-slate-100 rounded-xl text-center text-slate-400 text-sm italic">
+              <div className="p-8 border-2 border-dashed border-white/5 rounded-xl text-center text-slate-500 text-sm italic">
                 No media uploaded for this listing.
               </div>
             )}
@@ -109,7 +109,7 @@ export default async function ModeratorReviewPage({ params }: { params: Promise<
                 </label>
                 <textarea
                   id="feedback"
-                  name="feedback" // Updated from 'note' to 'feedback'
+                  name="feedback"
                   rows={4}
                   className="w-full border border-slate-800 rounded-xl p-4 text-sm bg-slate-900 text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none resize-none transition-all"
                   placeholder="Explain your decision..."
